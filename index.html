@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Bell - Google Nepali TTS</title>
+    <style>
+        :root { --bg: #f4f6f9; --card: #ffffff; --primary: #1e3a8a; --accent: #2563eb; --border: #e2e8f0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: var(--bg); padding: 20px; color: #1e293b; }
+        .container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
+        .card { background: var(--card); border-radius: 10px; padding: 20px; border: 1px solid var(--border); }
+        .clock { font-size: 3rem; font-family: monospace; font-weight: bold; text-align: center; color: var(--primary); }
+        input, select, button { padding: 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; }
+        button { background: var(--accent); color: white; border: none; font-weight: bold; cursor: pointer; }
+        .api-box { display: flex; gap: 10px; margin-top: 10px; }
+        .api-box input { flex: 1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2 style="color: var(--primary);">Nepali AI Voice Bell System</h2>
+        <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Google Cloud Text-to-Speech (ne-NP) Engine</p>
+    </div>
+
+    <!-- API Key Entry -->
+    <div class="card">
+        <label><strong>Google Cloud TTS API Key:</strong></label>
+        <div class="api-box">
+            <input type="password" id="apiKeyInput" placeholder="Enter your Google API Key here">
+            <button onclick="saveApiKey()">Save Key</button>
+        </div>
+        <p id="apiStatus" style="font-size: 0.8rem; margin-top: 5px; color: #64748b;"></p>
+    </div>
+
+    <!-- Clock -->
+    <div class="card clock" id="clock">00:00:00 AM</div>
+
+    <!-- Test Controls -->
+    <div class="card" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button onclick="speakNepaliGoogle('ध्यान दिनुहोस्, पहिलो पिरियड सुरु भयो।')">Test 1st Period (Nepali)</button>
+        <button onclick="speakNepaliGoogle('ध्यान दिनुहोस्, दोस्रो पिरियड सुरु भयो।')">Test 2nd Period (Nepali)</button>
+    </div>
+</div>
+
+<script>
+    let apiKey = localStorage.getItem('google_tts_api_key') || '';
+    if(apiKey) {
+        document.getElementById('apiKeyInput').value = apiKey;
+        document.getElementById('apiStatus').innerText = '✓ API Key loaded';
+        document.getElementById('apiStatus').style.color = 'green';
+    }
+
+    function saveApiKey() {
+        apiKey = document.getElementById('apiKeyInput').value.trim();
+        localStorage.setItem('google_tts_api_key', apiKey);
+        document.getElementById('apiStatus').innerText = '✓ API Key saved successfully!';
+        document.getElementById('apiStatus').style.color = 'green';
+    }
+
+    async function speakNepaliGoogle(text) {
+        if (!apiKey) {
+            alert('कृपया पहिले Google Cloud API Key राख्नुहोस्।');
+            return;
+        }
+
+        const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
+        const payload = {
+            input: { text: text },
+            voice: { languageCode: 'ne-NP', name: 'ne-NP-Language-A' },
+            audioConfig: { audioEncoding: 'MP3', speakingRate: 0.95 }
+        };
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+            if (data.audioContent) {
+                const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
+                audio.play();
+            } else {
+                console.error("TTS Error:", data);
+                alert("Voice synthesis failed. Check API key/quota.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Network error playing Nepali TTS.");
+        }
+    }
+
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('clock').innerText = now.toLocaleTimeString();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+</script>
+</body>
+</html>
