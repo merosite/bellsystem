@@ -1,104 +1,706 @@
-<!DOCTYPE html>
-<html lang="ne">
+.<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Bell - Google Nepali TTS</title>
+    <title>Campus Bell & Audio Schedule System</title>
     <style>
-        :root { --bg: #f4f6f9; --card: #ffffff; --primary: #1e3a8a; --accent: #2563eb; --border: #e2e8f0; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background: var(--bg); padding: 20px; color: #1e293b; }
-        .container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
-        .card { background: var(--card); border-radius: 10px; padding: 20px; border: 1px solid var(--border); }
-        .clock { font-size: 3rem; font-family: monospace; font-weight: bold; text-align: center; color: var(--primary); }
-        input, select, button { padding: 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; }
-        button { background: var(--accent); color: white; border: none; font-weight: bold; cursor: pointer; }
-        .api-box { display: flex; gap: 10px; margin-top: 10px; }
-        .api-box input { flex: 1; }
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --primary: #1e3a8a;
+            --accent: #2563eb;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --warning: #d97706;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 20px; }
+        .container { max-width: 960px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .card { background: var(--card-bg); border-radius: 12px; padding: 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid var(--border); }
+        .header { text-align: center; border-bottom: 2px solid var(--border); padding-bottom: 15px; }
+        .header h1 { color: var(--primary); font-size: 1.8rem; }
+        .header p { color: #64748b; font-size: 0.95rem; margin-top: 4px; }
+        .clock-display { text-align: center; margin: 10px 0; }
+        .time { font-size: 3.2rem; font-weight: bold; color: var(--primary); font-family: monospace; letter-spacing: 2px; }
+        .status-badge { display: inline-block; padding: 6px 18px; border-radius: 20px; font-weight: bold; font-size: 0.95rem; margin-top: 8px; }
+        .status-idle { background: #e0e7ff; color: var(--primary); }
+        .status-active { background: #dcfce7; color: var(--success); animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 10px; }
+        button { padding: 9px 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-anthem { background: var(--warning); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-secondary { background: #64748b; color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .audio-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-top: 10px; }
+        
+        .file-upload-box { background: #f8fafc; border: 2px dashed var(--border); padding: 15px; border-radius: 8px; text-align: center; transition: all 0.3s; }
+        .file-upload-box.uploaded { border-color: var(--success); background: #f0fdf4; }
+        .file-upload-box h4 { color: var(--primary); font-size: 0.95rem; margin-bottom: 8px; }
+        .file-status-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-top: 6px; }
+        .tag-none { background: #fee2e2; color: #b91c1c; }
+        .tag-ready { background: #dcfce7; color: #15803d; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        input, select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background-color: #f8fafc; font-weight: 600; color: #475569; }
+        .action-btn { padding: 5px 9px; font-size: 0.8rem; margin-right: 3px; }
+        .badge-anthem { background-color: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .badge-bell { background-color: #e0e7ff; color: #1e3a8a; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .badge-start { background-color: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .badge-finish { background-color: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .wake-lock-info { font-size: 0.85rem; text-align: center; color: var(--success); margin-top: 6px; font-weight: 600; }
+
+        #unlockOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999; color: white; padding: 20px; text-align: center;
+        }
+        #unlockOverlay button { padding: 16px 36px; font-size: 1.25rem; background: var(--success); border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
+<div id="unlockOverlay">
+    <h2>Mobile System Activation</h2>
+    <p style="margin: 15px 0 25px 0; max-width: 400px; color: #cbd5e1;">Click below to enable Audio Engine & Voice Bell.</p>
+    <button onclick="enableMobileAudio()">START SYSTEM NOW</button>
+</div>
+
 <div class="container">
-    <div class="card">
-        <h2 style="color: var(--primary);">Nepali AI Voice Bell System</h2>
-        <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Google Cloud Text-to-Speech (ne-NP) Engine</p>
+    <div class="card header">
+        <h1>Campus Digital Bell & Audio System</h1>
+        <p>Loud English Male Voice Announcement & Temple Chime System</p>
     </div>
 
-    <!-- API Key Entry -->
+    <!-- Clock Display -->
+    <div class="card clock-display">
+        <div class="time" id="clock">00:00:00 AM</div>
+        <div id="statusBadge" class="status-badge status-idle">System Ready</div>
+        <div id="wakeLockStatus" class="wake-lock-info">Background Audio Engine: Initializing...</div>
+        <p id="nextBellText" style="margin-top: 12px; color: #64748b; font-weight: 500;">Next Event: None</p>
+    </div>
+
+    <!-- Custom MP3 Upload Slots -->
     <div class="card">
-        <label><strong>Google Cloud TTS API Key:</strong></label>
-        <div class="api-box">
-            <input type="password" id="apiKeyInput" placeholder="Enter your Google API Key here">
-            <button onclick="saveApiKey()">Save Key</button>
+        <h3>Custom Audio Slots (MP3) & Settings</h3>
+        <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Upload MP3 files. Saved permanently in IndexedDB.</p>
+        
+        <div class="audio-grid">
+            <div class="file-upload-box" id="box_anthem">
+                <h4>1. National Anthem MP3</h4>
+                <input type="file" id="anthemUploader" accept="audio/*">
+                <br>
+                <span class="file-status-tag tag-none" id="anthemStatus">Not Loaded</span>
+                <p style="margin-top: 4px; font-size: 0.8rem; color: #1e3a8a;" id="anthemFileName">No audio selected</p>
+            </div>
+            <div class="file-upload-box" id="box_start">
+                <h4>2. Campus Start Audio</h4>
+                <input type="file" id="startAudioUploader" accept="audio/*">
+                <br>
+                <span class="file-status-tag tag-none" id="startStatus">Not Loaded</span>
+                <p style="margin-top: 4px; font-size: 0.8rem; color: #15803d;" id="startAudioFileName">No audio selected</p>
+            </div>
+            <div class="file-upload-box" id="box_finish">
+                <h4>3. Campus Finish Audio</h4>
+                <input type="file" id="finishAudioUploader" accept="audio/*">
+                <br>
+                <span class="file-status-tag tag-none" id="finishStatus">Not Loaded</span>
+                <p style="margin-top: 4px; font-size: 0.8rem; color: #b91c1c;" id="finishAudioFileName">No audio selected</p>
+            </div>
         </div>
-        <p id="apiStatus" style="font-size: 0.8rem; margin-top: 5px; color: #64748b;"></p>
+
+        <div style="margin-top: 15px; background: #f8fafc; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <label for="startAudioDuration" style="font-weight: 600; font-size: 0.9rem;">Period Start Audio Play Duration (Before Voice + Chime):</label>
+            <select id="startAudioDuration" onchange="saveStartDurationSetting(this.value)" style="width: auto; padding: 6px 12px;">
+                <option value="0">0 Sec (Voice & Bell Only)</option>
+                <option value="3" selected>3 Sec Start Audio</option>
+                <option value="5">5 Sec Start Audio</option>
+                <option value="10">10 Sec Start Audio</option>
+                <option value="-1">Full Audio File</option>
+            </select>
+        </div>
     </div>
 
-    <!-- Clock -->
-    <div class="card clock" id="clock">00:00:00 AM</div>
+    <!-- Controls -->
+    <div class="card">
+        <h3>Manual Audio Controls</h3>
+        <br>
+        <div class="controls">
+            <button class="btn-anthem" onclick="triggerBell('National Anthem MP3', 0, 'mp3_anthem')">Play Anthem</button>
+            <button class="btn-primary" style="background:#16a34a;" onclick="triggerBell('Campus Start Audio', 0, 'mp3_start')">Play Start Audio</button>
+            <button class="btn-primary" onclick="triggerBell('1st Period', 1, 'tone')">Test 1st Period Voice (Loud)</button>
+            <button class="btn-primary" onclick="triggerBell('2nd Period', 2, 'tone')">Test 2nd Period Voice (Loud)</button>
+            <button class="btn-danger" onclick="triggerBell('Campus Finish Audio', 0, 'mp3_finish')">Play Finish Audio</button>
+            <button class="btn-secondary" onclick="stopAudio()">Stop Audio</button>
+        </div>
+    </div>
 
-    <!-- Test Controls -->
-    <div class="card" style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <button onclick="speakNepaliGoogle('ध्यान दिनुहोस्, पहिलो पिरियड सुरु भयो।')">Test 1st Period (Nepali)</button>
-        <button onclick="speakNepaliGoogle('ध्यान दिनुहोस्, दोस्रो पिरियड सुरु भयो।')">Test 2nd Period (Nepali)</button>
+    <!-- Schedule Management -->
+    <div class="card">
+        <h3>Add Schedule Entry</h3>
+        <br>
+        <form id="bellForm">
+            <div class="form-grid">
+                <div>
+                    <label>Sound Type</label>
+                    <select id="bellType" onchange="handleTypeChange(this.value)">
+                        <option value="mp3_anthem">1. National Anthem MP3</option>
+                        <option value="mp3_start">2. Campus Start Audio MP3</option>
+                        <option value="tone">3. Temple Bell Tone (Tyang)</option>
+                        <option value="mp3_finish">4. Campus Finish Audio MP3</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Time</label>
+                    <input type="time" id="bellTime" value="06:00" required>
+                </div>
+                <div id="countWrapper" style="display: none;">
+                    <label>Chime Count & Period</label>
+                    <select id="bellCount" onchange="handleCountChange(this.value)">
+                        <option value="1">1 Strike - 1st Period</option>
+                        <option value="2">2 Strikes - 2nd Period</option>
+                        <option value="3">3 Strikes - 3rd Period</option>
+                        <option value="4">4 Strikes - 4th Period</option>
+                        <option value="5">5 Strikes - 5th Period</option>
+                        <option value="6">6 Strikes - 6th Period</option>
+                        <option value="7">7 Strikes - 7th Period</option>
+                        <option value="8">8 Strikes - 8th Period / Long Bell</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Title</label>
+                    <input type="text" id="bellTitle" value="National Anthem" placeholder="Title" required>
+                </div>
+                <div>
+                    <label>Action</label>
+                    <button type="submit" class="btn-primary" style="margin-top: 18px; width: 100%;">Add Entry</button>
+                </div>
+            </div>
+        </form>
+
+        <h3 style="margin-top: 20px;">Active Schedule (Up to 8 Periods)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Title</th>
+                    <th>Sound Mode</th>
+                    <th>Details</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="scheduleTable"></tbody>
+        </table>
     </div>
 </div>
 
+<audio id="audioAnthem" preload="auto"></audio>
+<audio id="audioStart" preload="auto"></audio>
+<audio id="audioFinish" preload="auto"></audio>
+
 <script>
-    let apiKey = localStorage.getItem('google_tts_api_key') || '';
-    if(apiKey) {
-        document.getElementById('apiKeyInput').value = apiKey;
-        document.getElementById('apiStatus').innerText = '✓ API Key loaded';
-        document.getElementById('apiStatus').style.color = 'green';
-    }
+    let audioCtx = null;
+    let isPlaying = false;
+    let editingId = null;
+    let wakeLock = null;
+    let sequenceTimeout = null;
+    let db = null;
 
-    function saveApiKey() {
-        apiKey = document.getElementById('apiKeyInput').value.trim();
-        localStorage.setItem('google_tts_api_key', apiKey);
-        document.getElementById('apiStatus').innerText = '✓ API Key saved successfully!';
-        document.getElementById('apiStatus').style.color = 'green';
-    }
-
-    async function speakNepaliGoogle(text) {
-        if (!apiKey) {
-            alert('कृपया पहिले Google Cloud API Key राख्नुहोस्।');
-            return;
+    // IndexedDB Setup for audio persistence
+    const dbRequest = indexedDB.open("CampusAudioDB", 1);
+    dbRequest.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains("audios")) {
+            db.createObjectStore("audios");
         }
+    };
+    dbRequest.onsuccess = (e) => {
+        db = e.target.result;
+        loadStoredAudiosFromDB();
+    };
 
-        const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
-        const payload = {
-            input: { text: text },
-            voice: { languageCode: 'ne-NP', name: 'ne-NP-Language-A' },
-            audioConfig: { audioEncoding: 'MP3', speakingRate: 0.95 }
+    function saveAudioToDB(key, fileBlob) {
+        if (!db) return;
+        const tx = db.transaction("audios", "readwrite");
+        tx.objectStore("audios").put(fileBlob, key);
+    }
+
+    function loadStoredAudiosFromDB() {
+        if (!db) return;
+        const tx = db.transaction("audios", "readonly");
+        const store = tx.objectStore("audios");
+        Object.keys(audioElements).forEach(key => {
+            const req = store.get(key);
+            req.onsuccess = () => {
+                if (req.result) {
+                    const url = URL.createObjectURL(req.result);
+                    audioElements[key].el.src = url;
+                    updateUploadIndicator(key, "Stored Audio File", true);
+                }
+            };
+        });
+    }
+
+    let startDurationSetting = parseInt(localStorage.getItem('campus_start_duration')) || 3;
+    document.getElementById('startAudioDuration').value = startDurationSetting;
+
+    function saveStartDurationSetting(val) {
+        startDurationSetting = parseInt(val);
+        localStorage.setItem('campus_start_duration', startDurationSetting);
+    }
+
+    function startSilentBackgroundAudio() {
+        const silentCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const silence = () => {
+            const osc = silentCtx.createOscillator();
+            const gain = silentCtx.createGain();
+            gain.gain.value = 0.0001;
+            osc.connect(gain);
+            gain.connect(silentCtx.destination);
+            osc.start();
+            osc.stop(silentCtx.currentTime + 1);
         };
+        setInterval(silence, 10000);
+    }
 
+    async function requestWakeLock() {
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            const data = await response.json();
-            if (data.audioContent) {
-                const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
-                audio.play();
-            } else {
-                console.error("TTS Error:", data);
-                alert("Voice synthesis failed. Check API key/quota.");
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+                document.getElementById('wakeLockStatus').innerText = "✓ Background Active Engine Mode: RUNNING (Lock Safe)";
+                document.getElementById('wakeLockStatus').style.color = "#16a34a";
             }
         } catch (err) {
-            console.error(err);
-            alert("Network error playing Nepali TTS.");
+            document.getElementById('wakeLockStatus').innerText = "✓ Silent Keep-Alive Engine Active";
         }
+    }
+
+    function enableMobileAudio() {
+        initAudio();
+        startSilentBackgroundAudio();
+        requestWakeLock();
+        
+        Object.keys(audioElements).forEach(key => {
+            const el = audioElements[key].el;
+            if (el) {
+                el.play().then(() => el.pause()).catch(() => {});
+            }
+        });
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const dummy = new SpeechSynthesisUtterance("System activated");
+            dummy.volume = 1.0;
+            window.speechSynthesis.speak(dummy);
+        }
+
+        document.getElementById('unlockOverlay').style.display = 'none';
+    }
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    const audioElements = {
+        mp3_anthem: { el: document.getElementById('audioAnthem'), box: 'box_anthem', status: 'anthemStatus', labelEl: 'anthemFileName' },
+        mp3_start: { el: document.getElementById('audioStart'), box: 'box_start', status: 'startStatus', labelEl: 'startAudioFileName' },
+        mp3_finish: { el: document.getElementById('audioFinish'), box: 'box_finish', status: 'finishStatus', labelEl: 'finishAudioFileName' }
+    };
+
+    function updateUploadIndicator(key, fileName, isSuccess) {
+        const item = audioElements[key];
+        const box = document.getElementById(item.box);
+        const statusTag = document.getElementById(item.status);
+        const label = document.getElementById(item.labelEl);
+
+        if (isSuccess) {
+            box.classList.add('uploaded');
+            statusTag.className = "file-status-tag tag-ready";
+            statusTag.innerText = "✓ Ready to Play";
+            label.innerText = fileName;
+        } else {
+            box.classList.remove('uploaded');
+            statusTag.className = "file-status-tag tag-none";
+            statusTag.innerText = "Not Loaded";
+            label.innerText = "No audio selected";
+        }
+    }
+
+    let schedule = JSON.parse(localStorage.getItem('campus_bell_schedule_v13')) || [
+        { id: 1, time: "05:58", title: "National Anthem", count: 0, type: "mp3_anthem", enabled: true },
+        { id: 2, time: "06:00", title: "Campus Start Time", count: 0, type: "mp3_start", enabled: true },
+        { id: 3, time: "06:05", title: "1st Period", count: 1, type: "tone", enabled: true },
+        { id: 4, time: "06:50", title: "2nd Period", count: 2, type: "tone", enabled: true },
+        { id: 5, time: "07:35", title: "3rd Period", count: 3, type: "tone", enabled: true },
+        { id: 6, time: "08:20", title: "4th Period", count: 4, type: "tone", enabled: true },
+        { id: 7, time: "09:00", title: "5th Period", count: 5, type: "tone", enabled: true },
+        { id: 8, time: "09:40", title: "6th Period", count: 6, type: "tone", enabled: true },
+        { id: 9, time: "10:20", title: "7th Period", count: 7, type: "tone", enabled: true },
+        { id: 10, time: "11:00", title: "8th Period", count: 8, type: "tone", enabled: true },
+        { id: 11, time: "11:45", title: "Campus Finish Time", count: 0, type: "mp3_finish", enabled: true }
+    ];
+
+    function setupUploader(inputId, audioKey) {
+        document.getElementById(inputId).addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                audioElements[audioKey].el.src = url;
+                updateUploadIndicator(audioKey, `File: ${file.name}`, true);
+                saveAudioToDB(audioKey, file);
+            }
+        });
+    }
+
+    setupUploader('anthemUploader', 'mp3_anthem');
+    setupUploader('startAudioUploader', 'mp3_start');
+    setupUploader('finishAudioUploader', 'mp3_finish');
+
+    function playSingleTempleBellStrike(startTime) {
+        initAudio();
+        const frequencies = [523.25, 1046.5, 1567.98, 2637.02, 3135.96]; 
+        const gains = [1.0, 0.6, 0.4, 0.25, 0.15];
+        const decays = [3.0, 2.2, 1.8, 1.2, 0.8];
+
+        frequencies.forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, startTime);
+            gainNode.gain.setValueAtTime(gains[i], startTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + decays[i]);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + decays[i]);
+        });
+    }
+
+    function playTempleBellChimes(strikesCount) {
+        initAudio();
+        let currentTime = audioCtx.currentTime;
+        const strikeInterval = 1.2;
+        for (let i = 0; i < strikesCount; i++) {
+            playSingleTempleBellStrike(currentTime + (i * strikeInterval));
+        }
+        const totalDuration = (strikesCount * strikeInterval) + 2.5;
+        sequenceTimeout = setTimeout(() => resetStatus(), totalDuration * 1000);
+    }
+
+    // --- LOUD ENGLISH MALE VOICE ENGINE ---
+    function speakPeriodText(periodCount, onComplete) {
+        const ordinalsEn = { 
+            1: "1st", 2: "2nd", 3: "3rd", 4: "4th", 
+            5: "5th", 6: "6th", 7: "7th", 8: "8th" 
+        };
+
+        const textToSpeak = `Attention! This is ${ordinalsEn[periodCount] || periodCount} Period.`;
+
+        let executed = false;
+        const finish = () => {
+            if (!executed) {
+                executed = true;
+                if (onComplete) onComplete();
+            }
+        };
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.90;  // Clear & Natural Speed
+            utterance.pitch = 0.85; // Male Deep Voice Tone
+            utterance.volume = 1.0; // MAX LOUD VOLUME
+
+            const voices = window.speechSynthesis.getVoices();
+            
+            // Priority: Male English Voice (Google/David/Male) -> Standard English
+            const targetVoice = voices.find(v => v.lang.startsWith('en') && (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('david') || v.name.toLowerCase().includes('george') || v.name.toLowerCase().includes('guy'))) || 
+                                voices.find(v => v.lang.startsWith('en'));
+
+            if (targetVoice) {
+                utterance.voice = targetVoice;
+            }
+
+            utterance.onend = finish;
+            utterance.onerror = finish;
+
+            window.speechSynthesis.speak(utterance);
+
+            // Safety timeout
+            setTimeout(finish, 3200);
+        } else {
+            finish();
+        }
+    }
+
+    function triggerBell(title, count, type) {
+        stopAudio();
+        isPlaying = true;
+        initAudio();
+
+        const badge = document.getElementById('statusBadge');
+        badge.className = "status-badge status-active";
+        badge.innerText = `PLAYING: ${title}`;
+
+        if (type === 'tone') {
+            const startAudioEl = audioElements['mp3_start'].el;
+            const hasStartAudio = startAudioEl && startAudioEl.src && startAudioEl.src.length > 5;
+
+            const announceAndBell = () => {
+                speakPeriodText(count, () => {
+                    setTimeout(() => {
+                        playTempleBellChimes(count);
+                    }, 400);
+                });
+            };
+
+            if (startDurationSetting > 0 && hasStartAudio) {
+                startAudioEl.volume = 1.0;
+                startAudioEl.currentTime = 0;
+                startAudioEl.play().then(() => {
+                    sequenceTimeout = setTimeout(() => {
+                        startAudioEl.pause();
+                        startAudioEl.currentTime = 0;
+                        sequenceTimeout = setTimeout(() => {
+                            announceAndBell();
+                        }, 300);
+                    }, startDurationSetting * 1000);
+                }).catch(() => announceAndBell());
+            } else {
+                announceAndBell();
+            }
+        } else if (type.startsWith('mp3_')) {
+            const audioObj = audioElements[type];
+            if (!audioObj || !audioObj.el.src || audioObj.el.src.length < 5) {
+                alert(`Please upload an MP3 file for (${title})!`);
+                resetStatus();
+                return;
+            }
+            audioObj.el.volume = 1.0;
+            audioObj.el.currentTime = 0;
+            audioObj.el.play().then(() => {
+                audioObj.el.onended = () => resetStatus();
+            }).catch(() => resetStatus());
+        }
+    }
+
+    function resetStatus() {
+        isPlaying = false;
+        const badge = document.getElementById('statusBadge');
+        badge.className = "status-badge status-idle";
+        badge.innerText = "System Ready";
+    }
+
+    function stopAudio() {
+        if (sequenceTimeout) { clearTimeout(sequenceTimeout); sequenceTimeout = null; }
+        if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
+        Object.keys(audioElements).forEach(key => {
+            const audio = audioElements[key].el;
+            if (audio) { audio.pause(); audio.currentTime = 0; audio.onended = null; }
+        });
+        resetStatus();
+    }
+
+    function handleTypeChange(type) {
+        const wrapper = document.getElementById('countWrapper');
+        const titleInput = document.getElementById('bellTitle');
+        if (type === 'tone') {
+            wrapper.style.display = 'block';
+            titleInput.value = getPeriodTitle(document.getElementById('bellCount').value);
+        } else {
+            wrapper.style.display = 'none';
+            if (type === 'mp3_anthem') titleInput.value = 'National Anthem';
+            else if (type === 'mp3_start') titleInput.value = 'Campus Start Time';
+            else if (type === 'mp3_finish') titleInput.value = 'Campus Finish Time';
+        }
+    }
+
+    function handleCountChange(countVal) { document.getElementById('bellTitle').value = getPeriodTitle(countVal); }
+
+    function getPeriodTitle(count) {
+        const ordinalsEn = { "1": "1st", "2": "2nd", "3": "3rd", "4": "4th", "5": "5th", "6": "6th", "7": "7th", "8": "8th" };
+        return `${ordinalsEn[count] || count} Period`;
     }
 
     function updateClock() {
         const now = new Date();
-        document.getElementById('clock').innerText = now.toLocaleTimeString();
+        const hours24 = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const currentTimeString = `${hours24}:${minutes}`;
+        
+        let hours12 = now.getHours();
+        const ampm = hours12 >= 12 ? 'PM' : 'AM';
+        hours12 = hours12 % 12 || 12;
+        document.getElementById('clock').innerText = `${String(hours12).padStart(2, '0')}:${minutes}:${seconds} ${ampm}`;
+
+        if (seconds === "00") {
+            schedule.forEach(item => {
+                if (item.enabled && item.time === currentTimeString) {
+                    triggerBell(item.title, item.count, item.type);
+                }
+            });
+        }
+        updateNextBellDisplay(currentTimeString);
     }
+
+    function updateNextBellDisplay(currentTime) {
+        const upcoming = schedule.filter(item => item.enabled && item.time > currentTime).sort((a, b) => a.time.localeCompare(b.time));
+        const nextText = document.getElementById('nextBellText');
+        nextText.innerText = upcoming.length > 0 ? `Next Event: ${format12Hr(upcoming[0].time)} - ${upcoming[0].title}` : `Next Event: No more events today`;
+    }
+
+    function format12Hr(time24) {
+        if (!time24) return '';
+        let [h, m] = time24.split(':');
+        h = parseInt(h);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return `${String(h).padStart(2, '0')}:${m} ${ampm}`;
+    }
+
+    function getBadgeClass(type) {
+        if (type === 'mp3_anthem') return 'badge-anthem';
+        if (type === 'mp3_start') return 'badge-start';
+        if (type === 'mp3_finish') return 'badge-finish';
+        return 'badge-bell';
+    }
+
+    function getTypeName(type) {
+        if (type === 'mp3_anthem') return 'National Anthem MP3';
+        if (type === 'mp3_start') return 'Campus Start MP3';
+        if (type === 'mp3_finish') return 'Campus Finish MP3';
+        return 'Temple Bell Sound';
+    }
+
+    function renderSchedule() {
+        const tbody = document.getElementById('scheduleTable');
+        tbody.innerHTML = '';
+        schedule.sort((a, b) => a.time.localeCompare(b.time));
+
+        schedule.forEach(item => {
+            const tr = document.createElement('tr');
+            if (editingId === item.id) {
+                tr.innerHTML = `
+                    <td><input type="time" id="editTime_${item.id}" value="${item.time}"></td>
+                    <td><input type="text" id="editTitle_${item.id}" value="${item.title}"></td>
+                    <td>
+                        <select id="editType_${item.id}" onchange="toggleEditCountDisplay(${item.id}, this.value)">
+                            <option value="mp3_anthem" ${item.type === 'mp3_anthem' ? 'selected' : ''}>National Anthem MP3</option>
+                            <option value="mp3_start" ${item.type === 'mp3_start' ? 'selected' : ''}>Campus Start MP3</option>
+                            <option value="tone" ${item.type === 'tone' ? 'selected' : ''}>Temple Bell Sound</option>
+                            <option value="mp3_finish" ${item.type === 'mp3_finish' ? 'selected' : ''}>Campus Finish MP3</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select id="editCount_${item.id}" onchange="autoUpdateEditTitle(${item.id}, this.value)" ${item.type !== 'tone' ? 'disabled' : ''}>
+                            <option value="0" ${item.count === 0 ? 'selected' : ''}>Full MP3</option>
+                            <option value="1" ${item.count === 1 ? 'selected' : ''}>1 Strike (1st Period)</option>
+                            <option value="2" ${item.count === 2 ? 'selected' : ''}>2 Strikes (2nd Period)</option>
+                            <option value="3" ${item.count === 3 ? 'selected' : ''}>3 Strikes (3rd Period)</option>
+                            <option value="4" ${item.count === 4 ? 'selected' : ''}>4 Strikes (4th Period)</option>
+                            <option value="5" ${item.count === 5 ? 'selected' : ''}>5 Strikes (5th Period)</option>
+                            <option value="6" ${item.count === 6 ? 'selected' : ''}>6 Strikes (6th Period)</option>
+                            <option value="7" ${item.count === 7 ? 'selected' : ''}>7 Strikes (7th Period)</option>
+                            <option value="8" ${item.count === 8 ? 'selected' : ''}>8 Strikes (8th Period)</option>
+                        </select>
+                    </td>
+                    <td>${item.enabled ? 'Active' : 'Disabled'}</td>
+                    <td>
+                        <button class="btn-success action-btn" onclick="saveEdit(${item.id})">Save</button>
+                        <button class="btn-secondary action-btn" onclick="cancelEdit()">Cancel</button>
+                    </td>
+                `;
+            } else {
+                tr.innerHTML = `
+                    <td><strong>${format12Hr(item.time)}</strong> (${item.time})</td>
+                    <td><strong>${item.title}</strong></td>
+                    <td><span class="${getBadgeClass(item.type)}">${getTypeName(item.type)}</span></td>
+                    <td>${item.type === 'tone' ? item.count + ' Strike(s)' : 'Full MP3 Audio'}</td>
+                    <td>
+                        <input type="checkbox" ${item.enabled ? 'checked' : ''} onchange="toggleBell(${item.id})">
+                        ${item.enabled ? 'Active' : 'Disabled'}
+                    </td>
+                    <td>
+                        <button class="btn-warning action-btn" onclick="startEdit(${item.id})">Edit</button>
+                        <button class="btn-danger action-btn" onclick="deleteBell(${item.id})">Delete</button>
+                    </td>
+                `;
+            }
+            tbody.appendChild(tr);
+        });
+
+        localStorage.setItem('campus_bell_schedule_v13', JSON.stringify(schedule));
+    }
+
+    function toggleEditCountDisplay(id, type) {
+        const countSelect = document.getElementById(`editCount_${id}`);
+        const titleInput = document.getElementById(`editTitle_${id}`);
+        if (type === 'tone') {
+            countSelect.disabled = false;
+            if (countSelect.value === '0') countSelect.value = '1';
+            titleInput.value = getPeriodTitle(countSelect.value);
+        } else {
+            countSelect.disabled = true;
+            if (type === 'mp3_anthem') titleInput.value = 'National Anthem';
+            else if (type === 'mp3_start') titleInput.value = 'Campus Start Time';
+            else if (type === 'mp3_finish') titleInput.value = 'Campus Finish Time';
+        }
+    }
+
+    function autoUpdateEditTitle(id, countVal) { document.getElementById(`editTitle_${id}`).value = getPeriodTitle(countVal); }
+    function startEdit(id) { editingId = id; renderSchedule(); }
+    function cancelEdit() { editingId = null; renderSchedule(); }
+
+    function saveEdit(id) {
+        const newTime = document.getElementById(`editTime_${id}`).value;
+        const newTitle = document.getElementById(`editTitle_${id}`).value;
+        const newType = document.getElementById(`editType_${id}`).value;
+        const newCount = parseInt(document.getElementById(`editCount_${id}`).value);
+
+        schedule = schedule.map(item => item.id === id ? {
+            ...item, time: newTime, title: newTitle, type: newType,
+            count: newType === 'tone' ? (newCount === 0 ? 1 : newCount) : 0
+        } : item);
+        editingId = null;
+        renderSchedule();
+    }
+
+    document.getElementById('bellForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const time = document.getElementById('bellTime').value;
+        const title = document.getElementById('bellTitle').value;
+        const type = document.getElementById('bellType').value;
+        const count = parseInt(document.getElementById('bellCount').value);
+
+        schedule.push({ id: Date.now(), time, title, type, count: type === 'tone' ? count : 0, enabled: true });
+        renderSchedule();
+        this.reset();
+        handleTypeChange('mp3_anthem');
+    });
+
+    function toggleBell(id) { schedule = schedule.map(item => item.id === id ? { ...item, enabled: !item.enabled } : item); renderSchedule(); }
+    function deleteBell(id) { schedule = schedule.filter(item => item.id !== id); renderSchedule(); }
+
     setInterval(updateClock, 1000);
+    renderSchedule();
     updateClock();
 </script>
 </body>
